@@ -1,0 +1,34 @@
+name: zcc-aur package Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      package_name:
+        description: "Package Name"
+        required: true
+        type: string
+
+jobs:
+  zcc-aur-pkgbuild:
+    runs-on: ubuntu-26.04-arm
+
+    steps:
+      - name: checkout
+        uses: actions/checkout@v7
+        with:
+          repository: "CerteKim/zcc-aur"
+
+      - name: Makepkg Build and Check
+        id: makepkg
+        uses: xiaoxi404/pkgbuild-action@arm64
+        with:
+          makepkgArgs: --skippgpcheck
+          pkgdir: packages/${{ inputs.package_name }}
+
+      - name: Upload Package Archive
+        uses: actions/upload-artifact@v7
+        with:
+          path: |
+            packages/${{ inputs.package_name }}/*.pkg.tar.zst
+            packages/${{ inputs.package_name }}/*.log
+          archive: false
