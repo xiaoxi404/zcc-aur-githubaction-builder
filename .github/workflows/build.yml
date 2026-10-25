@@ -3,15 +3,35 @@ name: zcc-aur package Build
 on:
   workflow_dispatch:
     inputs:
-      package_name:
-        description: "Package Name"
+      packages:
+        description: "Package Names"
         required: true
         type: string
+        default: "cdba,iio-sensor-proxy-ssc,linux-mibook-mainline,panel-himax-hx83121a-dkms,pd-mapper,qmic,qrtr,ra9530-dkms,rmtfs,tqftpserv,xiaomi-book-12.4-config"
 
 jobs:
-  zcc-aur-pkgbuild:
-    runs-on: ubuntu-26.04-arm
+  init:
+    runs-on: ubuntu-26.04
+    outputs:
+      package_matrix: ${{ steps.generate.outputs.matrix }}
+    steps:
+      - id: generate
+        name: Generate matrix from comma-separated input
+        env:
+          # 用 env 传递，避免 input 内容被当作 shell 代码执行（注入风险）
+          PACKAGES: ${{ inputs.packages }}
+        run: |
+          matrix=$(echo "$PACKAGES" \
+            | jq -c 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))')
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "Generated matrix: $matrix"
 
+  build:
+    needs: init
+    runs-on: ubuntu-26.04-arm
+    strategy:
+      matrix:
+        package: ${{ fromJson(needs.init.outputs.package_matrix) }}
     steps:
       - name: checkout
         uses: actions/checkout@v7
@@ -23,11 +43,11 @@ jobs:
         uses: xiaoxi404/pkgbuild-action@arm64
         with:
           makepkgArgs: --skippgpcheck
-          pkgdir: packages/${{ inputs.package_name }}
+          pkgdir: packages/${{ matrix.package }}
 
       - name: Upload Package Archive
         uses: actions/upload-artifact@v7
         with:
           path: |
-            packages/${{ inputs.package_name }}/*.pkg.tar.*
+            packages/${{ matrix.package }}/*.pkg.tar.*
           archive: false
