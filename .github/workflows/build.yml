@@ -21,8 +21,8 @@ jobs:
           # 用 env 传递，避免 input 内容被当作 shell 代码执行（注入风险）
           PACKAGES: ${{ inputs.packages }}
         run: |
-          matrix=$(echo "$PACKAGES" \
-            | jq -c 'split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))')
+          matrix=$(jq -nc --arg p "$PACKAGES" \
+            '$p | split(",") | map(gsub("^\\s+|\\s+$"; "")) | map(select(length > 0))')
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
           echo "Generated matrix: $matrix"
 
