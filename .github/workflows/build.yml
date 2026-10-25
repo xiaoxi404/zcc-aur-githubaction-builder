@@ -29,6 +29,5 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           path: |
-            packages/${{ inputs.package_name }}/*.pkg.tar.zst
-            packages/${{ inputs.package_name }}/*.log
+            packages/${{ inputs.package_name }}/*.pkg.tar.*
           archive: false
